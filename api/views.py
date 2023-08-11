@@ -72,8 +72,12 @@ def updateNote(request, id):
     except:
         return Response("this note doesn't exist!!", status=status.HTTP_404_NOT_FOUND)
 
-#@api_view(["DELETE"])
-#def deleteNote(request, id):
-#    note = Note.objects.get(id=id)
-#    note.delete()
+@api_view(["DELETE"])
+def deleteNote(request, id):
+    try:
+        note = Note.objects.get(id=id)
+        note.delete()
+        return Response(f"note with id: {id} successfully deleted!", status=status.HTTP_200_OK)
+    except:
+        return Response(f"note with id: {id} doesn't exist", status=status.HTTP_404_NOT_FOUND)
 
