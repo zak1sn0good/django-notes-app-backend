@@ -50,17 +50,30 @@ def getNotes(request):
 
 @api_view(["GET"])
 def getSingleNote(request, id):
-    note = Note.objects.get(id=id)
-    serializer = NoteSerializer(note, many=False)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    try:
+        note = Note.objects.get(id=id)
+        serializer = NoteSerializer(note, many=False)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except:
+        return Response("this note doesn't exist!", status=status.HTTP_404_NOT_FOUND)
+        
 
 @api_view(["PATCH"])
 def updateNote(request, id):
-    data = request.data
-    note = Note.objects.get(id=id)
-    serializer = NoteSerializer(instance=note, data=data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    else:
-        return Response("provided data is invalid", status=status.HTTP_400_BAD_REQUEST)
+    try:
+        data = request.data
+        note = Note.objects.get(id=id)
+        serializer = NoteSerializer(instance=note, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response("provided data is invalid", status=status.HTTP_400_BAD_REQUEST)
+    except:
+        return Response("this note doesn't exist!!", status=status.HTTP_404_NOT_FOUND)
+
+#@api_view(["DELETE"])
+#def deleteNote(request, id):
+#    note = Note.objects.get(id=id)
+#    note.delete()
+
