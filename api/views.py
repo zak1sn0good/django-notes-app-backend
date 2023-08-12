@@ -40,7 +40,7 @@ def getRoutes(request):
             'description': 'Deletes and exiting note'
         },
     ]
-    return Response(routes)
+    return Response(routes, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
 def getNotes(request):
@@ -52,34 +52,35 @@ def getNotes(request):
 def getSingleNote(request, id):
     try:
         note = Note.objects.get(id=id)
-        serializer = NoteSerializer(note, many=False)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    except:
+    except Note.DoesNotExist:
         return Response("this note doesn't exist!", status=status.HTTP_404_NOT_FOUND)
+    serializer = NoteSerializer(note, many=False)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+        
         
 
 @api_view(["PATCH"])
 def updateNote(request, id):
+    data = request.data
     try:
-        data = request.data
         note = Note.objects.get(id=id)
-        serializer = NoteSerializer(instance=note, data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response("provided data is invalid", status=status.HTTP_400_BAD_REQUEST)
-    except:
+    except Note.DoesNotExist:
         return Response("this note doesn't exist!!", status=status.HTTP_404_NOT_FOUND)
+    serializer = NoteSerializer(instance=note, data=data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    else:
+        return Response("provided data is invalid", status=status.HTTP_400_BAD_REQUEST)      
 
 @api_view(["DELETE"])
 def deleteNote(request, id):
     try:
         note = Note.objects.get(id=id)
-        note.delete()
-        return Response(f"note with id: {id} successfully deleted!", status=status.HTTP_200_OK)
     except:
         return Response(f"note with id: {id} doesn't exist", status=status.HTTP_404_NOT_FOUND)
+    note.delete()
+    return Response(f"note with id: {id} successfully deleted!", status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
