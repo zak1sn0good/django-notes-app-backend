@@ -81,3 +81,14 @@ def deleteNote(request, id):
     except:
         return Response(f"note with id: {id} doesn't exist", status=status.HTTP_404_NOT_FOUND)
 
+
+@api_view(["POST"])
+def createNote(request):
+    try:
+        data = request.data
+        note = Note.objects.create(body=data["body"])
+        serializer = NoteSerializer(note, many=False)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)    
+    except:
+        return Response("invalid or missing inputs", status=status.HTTP_400_BAD_REQUEST)
+
