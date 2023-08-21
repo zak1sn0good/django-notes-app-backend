@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
 from .models import Note
 from .serializers import NoteSerializer
@@ -44,7 +45,6 @@ def getRoutes(request):
     return Response(routes, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
 def getNotes(request):
     notes = Note.objects.all()
     serializer = NoteSerializer(notes, many=True)
@@ -62,34 +62,45 @@ def getSingleNote(request, id):
         
 
 @api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
 def updateNote(request, id):
     data = request.data
     try:
         note = Note.objects.get(id=id)
     except Note.DoesNotExist:
         return Response("this note doesn't exist!!", status=status.HTTP_404_NOT_FOUND)
-    serializer = NoteSerializer(instance=note, data=data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    if note.owner.pk == request.user.id:
+        serializer = NoteSerializer(instance=note, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response("provided data is invalid", status=status.HTTP_400_BAD_REQUEST)
     else:
-        return Response("provided data is invalid", status=status.HTTP_400_BAD_REQUEST)      
+        raise PermissionDenied()         
+    
 
 @api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
 def deleteNote(request, id):
     try:
         note = Note.objects.get(id=id)
-    except:
+    except Note.DoesNotExist:
         return Response(f"note with id: {id} doesn't exist", status=status.HTTP_404_NOT_FOUND)
-    note.delete()
-    return Response(f"note with id: {id} successfully deleted!", status=status.HTTP_200_OK)
+    if note.owner != None and note.owner.pk == request.user.id:
+        note.delete()
+        return Response(f"note with id: {id} successfully deleted!", status=status.HTTP_200_OK)
+    else:
+        raise PermissionDenied()
+    
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def createNote(request):
     try:
         data = request.data
-        note = Note.objects.create(body=data["body"])
+        note = Note.objects.create(body=data["body"], owner=request.user)
         serializer = NoteSerializer(note, many=False)
         return Response(serializer.data, status=status.HTTP_201_CREATED)    
     except:
