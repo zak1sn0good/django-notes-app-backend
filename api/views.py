@@ -45,19 +45,25 @@ def getRoutes(request):
     return Response(routes, status=status.HTTP_200_OK)
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def getNotes(request):
     notes = Note.objects.all()
     serializer = NoteSerializer(notes, many=True)
     return Response(serializer.data)
 
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def getSingleNote(request, id):
     try:
         note = Note.objects.get(id=id)
     except Note.DoesNotExist:
         return Response("this note doesn't exist!", status=status.HTTP_404_NOT_FOUND)
-    serializer = NoteSerializer(note, many=False)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    if note.owner and note.owner.pk == request.user.id:
+        serializer = NoteSerializer(note, many=False)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    else:
+        raise PermissionDenied()
+    
         
         
 
@@ -69,7 +75,7 @@ def updateNote(request, id):
         note = Note.objects.get(id=id)
     except Note.DoesNotExist:
         return Response("this note doesn't exist!!", status=status.HTTP_404_NOT_FOUND)
-    if note.owner.pk == request.user.id:
+    if note.owner and note.owner.pk == request.user.id:
         serializer = NoteSerializer(instance=note, data=data)
         if serializer.is_valid():
             serializer.save()
